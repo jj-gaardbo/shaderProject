@@ -19,6 +19,11 @@ Shader "Custom/myCel" {
         _SpecColor ("- Specular Color", Color) = (1,1,1,1)
         _SpecDetail ("- Specular Detail", Range(0,3)) = 1
         _Shininess ("- Shininess", Range(0, 20)) = 10
+
+        // Outline Properties
+        [Toggle(USE_OUTLINE)] _UseOutline("Outline ON/OFF", Float) = 0
+        _OutlineColor("Outline Color", Color) = (0,0,0,0)
+	    _OutlineThickness("Outline Thickness", Range(0,1)) = 0.1
     }
     SubShader {
         Pass {
@@ -32,14 +37,15 @@ Shader "Custom/myCel" {
             #pragma shader_feature USE_AMBIENT
             #pragma shader_feature USE_DIFFUSE
             #pragma shader_feature USE_SPECULAR
+            #pragma shader_feature USE_OUTLINE
             
 
             uniform float4 _LightColor0; 
 
             sampler2D _MainTex;
             float4 _MainTex_ST;
-            float4 _Color, _SpecColor;
-            float _AmbientAmount, _DiffuseThreshold, _DiffuseDetail, _DiffuseDifference, _SpecDetail, _Shininess;
+            float4 _Color, _SpecColor, _OutlineColor;
+            float _AmbientAmount, _DiffuseThreshold, _DiffuseDetail, _DiffuseDifference, _SpecDetail, _Shininess, _OutlineThickness;
     
             struct vertexInput {
                 float4 pos : POSITION;
@@ -82,6 +88,8 @@ Shader "Custom/myCel" {
                 float3 outputColor = _Color;
                 float nDotL = max(0.0, dot(input.worldNormal, lightDirection));
 
+                
+
                 #ifdef USE_AMBIENT
                 outputColor = (UNITY_LIGHTMODEL_AMBIENT.rgb * outputColor.rgb) * _AmbientAmount;
                 #endif
@@ -113,6 +121,11 @@ Shader "Custom/myCel" {
                         outputColor *= passLightColor.rgb * outputColor.rgb; 
                     }
                 }
+                #endif
+
+                #ifdef USE_OUTLINE
+                float outlineStrength = saturate( (dot(input.worldNormal, input.viewDir ) - _OutlineThickness));
+                outputColor *= outlineStrength;
                 #endif
 
                 #ifdef USE_SPECULAR
@@ -148,9 +161,9 @@ Shader "Custom/myCel" {
                     if (nDotL > 0.0 && specCalculation > 0.25) {
                         outputColor = _SpecColor.a * passLightColor.rgb * _SpecColor.rgb + (1.0 - _SpecColor.a) * outputColor;
                     }
-                }                
+                }           
                 #endif
-
+                
                 fixed4 combinedOutput = float4( ( tex2D(_MainTex, input.uv) * outputColor ), 0.0 );
 
                 return combinedOutput;
