@@ -6,13 +6,18 @@ Shader "Custom/myCel" {
 
         //Ambient Properties
         [Toggle(USE_AMBIENT)] _UseAmbient("Ambient ON/OFF", Float) = 0
-        _AmbientAmount ("- Ambient Amount", Range( 0,10 )) = 5
+        _AmbientAmount ("- Ambient Amount", Range( 0,6.7 )) = 5
 
         // Diffuse Properties
         [Toggle(USE_DIFFUSE)] _UseDiffuse("Diffuse ON/OFF", Float) = 0
         _DiffuseThreshold ("- Diffuse Threshold", Range( 0,1 )) = 0
         _DiffuseDetail ("- Diffuse Detail", Range(0,3)) = 1
         _DiffuseDifference ("- Diffuse Unlit Difference", Range( 0,1 )) = 0
+
+        // Specular Properties
+        [Toggle(USE_SPECULAR)] _UseSpecular("Specular ON/OFF", Float) = 0
+        _SpecColor ("- Specular Color", Color) = (1,1,1,1) 
+        _Shininess ("- Shininess", Range(0, 20)) = 10
     }
     SubShader {
         Pass {
@@ -25,13 +30,15 @@ Shader "Custom/myCel" {
             //Toggles
             #pragma shader_feature USE_AMBIENT
             #pragma shader_feature USE_DIFFUSE
+            #pragma shader_feature USE_SPECULAR
+            
 
             uniform float4 _LightColor0; 
 
             sampler2D _MainTex;
             float4 _MainTex_ST;
-            float4 _Color;
-            float _AmbientAmount, _DiffuseThreshold, _DiffuseDetail, _DiffuseDifference;
+            float4 _Color, _SpecColor;
+            float _AmbientAmount, _DiffuseThreshold, _DiffuseDetail, _DiffuseDifference, _Shininess;
     
             struct vertexInput {
                 float4 pos : POSITION;
@@ -44,6 +51,7 @@ Shader "Custom/myCel" {
                 float3 worldNormal : TEXCOORD1;
                 float4 worldPos : TEXCOORD2;
                 float4 lightPos : TEXCOORD3;
+                float3 viewDir : TEXCOORD4;
             };
     
             vertexOutput vert(vertexInput input)
@@ -55,7 +63,7 @@ Shader "Custom/myCel" {
 
                 output.worldPos = normalize( mul( ModelMatrix, input.pos ) );
                 output.worldNormal = normalize( mul( input.normal, ModelMatrixInverse).xyz );
-
+                output.viewDir = normalize(_WorldSpaceCameraPos - mul(ModelMatrix, input.pos).xyz);
 
                 output.lightPos = normalize( _WorldSpaceLightPos0 );
                 output.uv = input.texCoords;
@@ -71,6 +79,7 @@ Shader "Custom/myCel" {
                 float3 lightDirection = normalize( input.lightPos - input.worldPos.xyz );
  
                 float3 outputColor = _Color;
+                float nDotL = max(0.0, dot(input.worldNormal, lightDirection));
 
                 #ifdef USE_AMBIENT
                 outputColor = (UNITY_LIGHTMODEL_AMBIENT.rgb * outputColor.rgb) * _AmbientAmount;
@@ -78,7 +87,6 @@ Shader "Custom/myCel" {
 
                 #ifdef USE_DIFFUSE
                 //Sharp Diffuse
-                float nDotL = max(0.0, dot(input.worldNormal, lightDirection));
                 if(_DiffuseDetail > 2 && _DiffuseDetail <= 3){
                     if (nDotL >= _DiffuseThreshold * 0.75){
                         outputColor *= passLightColor.rgb * (outputColor.rgb - (_DiffuseDifference / 3));
@@ -104,6 +112,34 @@ Shader "Custom/myCel" {
                         outputColor *= passLightColor.rgb * outputColor.rgb; 
                     }
                 }
+                #endif
+
+                #ifdef USE_SPECULAR
+                float attenuation;
+                if (0.0 == _WorldSpaceLightPos0.w){
+                // directional light?
+                    attenuation = 1.0; // no attenuation
+                    lightDirection = normalize(_WorldSpaceLightPos0.xyz);
+                } else {
+                // point or spot light
+                    float3 vertexToLightSource = _WorldSpaceLightPos0.xyz - input.viewDir;
+                    float distance = length(vertexToLightSource);
+                    attenuation = 1.0 / distance; // linear attenuation 
+                    lightDirection = normalize(vertexToLightSource);
+                }
+
+                float3 specularReflection;
+                if (nDotL < 0.0) 
+                // light source on the wrong side?
+                {
+                    specularReflection = float3(0.0, 0.0, 0.0); 
+                    // no specular reflection
+                }
+                else // light source on the right side
+                {
+                    specularReflection = attenuation * _LightColor0.rgb * _SpecColor.rgb * pow(max(0.0, dot(reflect(-lightDirection, input.worldNormal), input.viewDir)), _Shininess);
+                }
+                outputColor += specularReflection;
                 #endif
 
                 fixed4 combinedOutput = float4( ( tex2D(_MainTex, input.uv) * outputColor ), 0.0 );
