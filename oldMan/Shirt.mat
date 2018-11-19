@@ -71,9 +71,9 @@ Material:
     - _OcclusionStrength: 1
     - _OutlineThickness: 0.33
     - _Parallax: 0.02
-    - _Shininess: 17.3
+    - _Shininess: 14.6
     - _SmoothnessTextureChannel: 0
-    - _SpecDetail: 2.56
+    - _SpecDetail: 3
     - _SpecularHighlights: 1
     - _SrcBlend: 1
     - _UVSec: 0
