@@ -16,7 +16,8 @@ Shader "Custom/myCel" {
 
         // Specular Properties
         [Toggle(USE_SPECULAR)] _UseSpecular("Specular ON/OFF", Float) = 0
-        _SpecColor ("- Specular Color", Color) = (1,1,1,1) 
+        _SpecColor ("- Specular Color", Color) = (1,1,1,1)
+        _SpecDetail ("- Specular Detail", Range(0,3)) = 1
         _Shininess ("- Shininess", Range(0, 20)) = 10
     }
     SubShader {
@@ -38,7 +39,7 @@ Shader "Custom/myCel" {
             sampler2D _MainTex;
             float4 _MainTex_ST;
             float4 _Color, _SpecColor;
-            float _AmbientAmount, _DiffuseThreshold, _DiffuseDetail, _DiffuseDifference, _Shininess;
+            float _AmbientAmount, _DiffuseThreshold, _DiffuseDetail, _DiffuseDifference, _SpecDetail, _Shininess;
     
             struct vertexInput {
                 float4 pos : POSITION;
@@ -127,8 +128,26 @@ Shader "Custom/myCel" {
                     attenuation = 1.0 / distance;
                     lightDirection = normalize(vertexToLightSource);
                 }
-                if (nDotL > 0.0 && attenuation *  pow(max(0.0, dot(reflect(-lightDirection, input.worldNormal), input.viewDir)), _Shininess) > 0.5) {
-                    outputColor = _SpecColor.a * passLightColor.rgb * _SpecColor.rgb + (1.0 - _SpecColor.a) * outputColor;
+                float specCalculation = attenuation *  pow(max(0.0, dot(reflect(-lightDirection, input.worldNormal), input.viewDir)), _Shininess);
+                if(_SpecDetail > 2 && _SpecDetail <= 3){
+                    if (nDotL > 0.0 && specCalculation > 0.25 && nDotL > 0.0 && specCalculation <= 0.50) {
+                        outputColor = _SpecColor.a * passLightColor.rgb * (_SpecColor.rgb * (outputColor + 0.25)) + (1.0 - _SpecColor.a) * outputColor;
+                    } else if (nDotL > 0.0 && specCalculation > 0.50 && nDotL > 0.0 && specCalculation <= 0.75) {
+                        outputColor = _SpecColor.a * passLightColor.rgb * (_SpecColor.rgb * (outputColor + 0.50)) + (1.0 - _SpecColor.a) * outputColor;
+                    } else if (nDotL > 0.0 && specCalculation > 0.75) {
+                        outputColor = _SpecColor.a * passLightColor.rgb * _SpecColor.rgb + (1.0 - _SpecColor.a) * outputColor;
+                    }
+                } else if(_SpecDetail > 1 && _SpecDetail <= 2){
+                    if (nDotL > 0.0 && specCalculation > 0.25 && nDotL > 0.0 && specCalculation <= 0.50) {
+                        outputColor = _SpecColor.a * passLightColor.rgb * (_SpecColor.rgb * (outputColor + 0.25)) + (1.0 - _SpecColor.a) * outputColor;
+                    } else if (nDotL > 0.0 && specCalculation > 0.25) {
+                        outputColor = _SpecColor.a * passLightColor.rgb * _SpecColor.rgb + (1.0 - _SpecColor.a) * outputColor;
+                    }
+                    
+                } else if(_SpecDetail >= 0 && _SpecDetail <= 1){
+                    if (nDotL > 0.0 && specCalculation > 0.25) {
+                        outputColor = _SpecColor.a * passLightColor.rgb * _SpecColor.rgb + (1.0 - _SpecColor.a) * outputColor;
+                    }
                 }                
                 #endif
 
