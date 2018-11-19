@@ -124,22 +124,12 @@ Shader "Custom/myCel" {
                 // point or spot light
                     float3 vertexToLightSource = _WorldSpaceLightPos0.xyz - input.viewDir;
                     float distance = length(vertexToLightSource);
-                    attenuation = 1.0 / distance; // linear attenuation 
+                    attenuation = 1.0 / distance;
                     lightDirection = normalize(vertexToLightSource);
                 }
-
-                float3 specularReflection;
-                if (nDotL < 0.0) 
-                // light source on the wrong side?
-                {
-                    specularReflection = float3(0.0, 0.0, 0.0); 
-                    // no specular reflection
-                }
-                else // light source on the right side
-                {
-                    specularReflection = attenuation * _LightColor0.rgb * _SpecColor.rgb * pow(max(0.0, dot(reflect(-lightDirection, input.worldNormal), input.viewDir)), _Shininess);
-                }
-                outputColor += specularReflection;
+                if (nDotL > 0.0 && attenuation *  pow(max(0.0, dot(reflect(-lightDirection, input.worldNormal), input.viewDir)), _Shininess) > 0.5) {
+                    outputColor = _SpecColor.a * passLightColor.rgb * _SpecColor.rgb + (1.0 - _SpecColor.a) * outputColor;
+                }                
                 #endif
 
                 fixed4 combinedOutput = float4( ( tex2D(_MainTex, input.uv) * outputColor ), 0.0 );
