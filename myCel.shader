@@ -164,7 +164,7 @@ Shader "Custom/myCel" {
                 }
                 #endif
                 
-                fixed4 combinedOutput = float4( ( tex2D(_MainTex, input.uv) * outputColor ), 0.0 );
+                fixed4 combinedOutput = float4( ( tex2D(_MainTex, input.uv.xy * _MainTex_ST.xy + _MainTex_ST.zw) * outputColor ), 0.0 );
 
                 return combinedOutput;
                 

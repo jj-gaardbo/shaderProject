@@ -55,12 +55,12 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     m_Floats:
-    - _AmbientAmount: 5.3
+    - _AmbientAmount: 6.62
     - _BumpScale: 1
     - _Cutoff: 0.5
     - _DetailNormalMapScale: 1
     - _DiffuseDetail: 3
-    - _DiffuseDifference: 0.293
+    - _DiffuseDifference: 1
     - _DiffuseThreshold: 1
     - _DstBlend: 0
     - _GlossMapScale: 1
