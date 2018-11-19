@@ -8,7 +8,7 @@ Material:
   m_PrefabInternal: {fileID: 0}
   m_Name: Shirt
   m_Shader: {fileID: 4800000, guid: d44e990854f3146d0a9e0265d1b94662, type: 3}
-  m_ShaderKeywords: USE_DIFFUSE USE_OUTLINE
+  m_ShaderKeywords: USE_AMBIENT USE_DIFFUSE USE_OUTLINE
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
@@ -55,12 +55,12 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     m_Floats:
-    - _AmbientAmount: 5
+    - _AmbientAmount: 6.02
     - _BumpScale: 1
     - _Cutoff: 0.5
     - _DetailNormalMapScale: 1
     - _DiffuseDetail: 3
-    - _DiffuseDifference: 0.362
+    - _DiffuseDifference: 1
     - _DiffuseThreshold: 1
     - _DstBlend: 0
     - _GlossMapScale: 1
@@ -71,13 +71,13 @@ Material:
     - _OcclusionStrength: 1
     - _OutlineThickness: 0.33
     - _Parallax: 0.02
-    - _Shininess: 10
+    - _Shininess: 17.3
     - _SmoothnessTextureChannel: 0
-    - _SpecDetail: 0.23
+    - _SpecDetail: 2.56
     - _SpecularHighlights: 1
     - _SrcBlend: 1
     - _UVSec: 0
-    - _UseAmbient: 0
+    - _UseAmbient: 1
     - _UseDiffuse: 1
     - _UseOutline: 1
     - _UseSpecular: 0
