@@ -88,8 +88,6 @@ Shader "Custom/myCel" {
                 float3 outputColor = _Color;
                 float nDotL = max(0.0, dot(input.worldNormal, lightDirection));
 
-                
-
                 #ifdef USE_AMBIENT
                 outputColor = (UNITY_LIGHTMODEL_AMBIENT.rgb * outputColor.rgb) * _AmbientAmount;
                 #endif
@@ -120,13 +118,6 @@ Shader "Custom/myCel" {
                     } else {
                         outputColor *= passLightColor.rgb * outputColor.rgb; 
                     }
-                }
-                #endif
-
-                #ifdef USE_OUTLINE
-                float outlineStrength = saturate( (dot(input.worldNormal, input.viewDir ) - _OutlineThickness));
-                if(outlineStrength < 0.01){
-                    outputColor *= outlineStrength;
                 }
                 #endif
 
@@ -164,6 +155,13 @@ Shader "Custom/myCel" {
                         outputColor = _SpecColor.a * passLightColor.rgb * _SpecColor.rgb + (1.0 - _SpecColor.a) * outputColor;
                     }
                 }           
+                #endif
+
+                #ifdef USE_OUTLINE
+                float outlineStrength = saturate( (dot(input.worldNormal, input.viewDir ) - _OutlineThickness));
+                if(outlineStrength < 0.01){
+                    outputColor *= outlineStrength;
+                }
                 #endif
                 
                 fixed4 combinedOutput = float4( ( tex2D(_MainTex, input.uv) * outputColor ), 0.0 );
