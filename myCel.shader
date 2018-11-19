@@ -22,8 +22,8 @@ Shader "Custom/myCel" {
 
         // Outline Properties
         [Toggle(USE_OUTLINE)] _UseOutline("Outline ON/OFF", Float) = 0
-        _OutlineColor("Outline Color", Color) = (0,0,0,0)
-	    _OutlineThickness("Outline Thickness", Range(0,1)) = 0.1
+        _OutlineColor("- Outline Color", Color) = (0,0,0,0)
+	    _OutlineThickness("- Outline Thickness", Range(0,1)) = 0.1
     }
     SubShader {
         Pass {
@@ -125,7 +125,9 @@ Shader "Custom/myCel" {
 
                 #ifdef USE_OUTLINE
                 float outlineStrength = saturate( (dot(input.worldNormal, input.viewDir ) - _OutlineThickness));
-                outputColor *= outlineStrength;
+                if(outlineStrength < 0.01){
+                    outputColor *= outlineStrength;
+                }
                 #endif
 
                 #ifdef USE_SPECULAR
