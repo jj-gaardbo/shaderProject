@@ -2,6 +2,9 @@
 Shader "Custom/myCelWater" {
     Properties {
         _MainTex ("Main texture", 2D) = "white" {}
+        _BumpMap ("Bump Map", 2D) = "bump" {}
+        _BumpMapDepth ("Bump Map Depth", Range(-1.0 ,40.0)) = 1
+
         _Color ("Color", Color) = (1.0,1.0,1.0,1.0)
         //Transparency Properties
         [Toggle(USE_TRANSPARENCY)] _UseTransparency("Transparent ON/OFF", Float) = 0
@@ -65,26 +68,29 @@ Shader "Custom/myCelWater" {
             
             uniform float4 _LightColor0;
 
-            sampler2D _MainTex, _NoiseTex, _CameraDepthTexture, _BackgroundTexture;
-            float4 _MainTex_ST, _NoiseTex_ST;
+            sampler2D _MainTex, _NoiseTex, _CameraDepthTexture, _BackgroundTexture, _BumpMap;
+            float4 _MainTex_ST, _NoiseTex_ST, _BumpMap_ST;
             float4 _Color, _SpecColor, _OutlineColor, _FoamColor;
-            float _Transparency, _AmbientAmount, _DiffuseThreshold, _DiffuseDetail, _DiffuseDifference, _SpecDetail, _Shininess, _OutlineThickness, _Speed, _Amount, _Height, _DistortStrength, _Foam;
+            float _BumpMapDepth, _Transparency, _AmbientAmount, _DiffuseThreshold, _DiffuseDetail, _DiffuseDifference, _SpecDetail, _Shininess, _OutlineThickness, _Speed, _Amount, _Height, _DistortStrength, _Foam;
 
             struct vertexInput {
                 float4 pos : POSITION;
                 float4 texCoords : TEXCOORD0;
                 float4 normal : NORMAL;
+                float4 tangent : TANGENT;
             };
             struct vertexOutput {
                 UNITY_FOG_COORDS(1)
                 float4 pos : SV_POSITION;
                 float4 uv : TEXCOORD0;
                 float3 worldNormal : TEXCOORD1;
-                float4 worldPos : TEXCOORD2;
-                float4 screenPos : TEXCOORD3;
-                float4 lightPos : TEXCOORD4;
-                float3 viewDir : TEXCOORD5;
-                float4 grabPos : TEXCOORD6;
+                float3 worldTangent : TEXCOORD2;
+                float3 worldBinormal : TEXCOORD3;
+                float4 worldPos : TEXCOORD4;
+                float4 screenPos : TEXCOORD5;
+                float4 lightPos : TEXCOORD6;
+                float3 viewDir : TEXCOORD7;
+                float4 grabPos : TEXCOORD8;
             };
     
             vertexOutput vert(vertexInput input)
@@ -96,6 +102,9 @@ Shader "Custom/myCelWater" {
 
                 output.worldPos = normalize( mul( ModelMatrix, input.pos ) );
                 output.worldNormal = normalize( mul( input.normal, ModelMatrixInverse).xyz );
+                output.worldTangent = normalize( mul( unity_ObjectToWorld, input.tangent ).xyz );
+                output.worldBinormal = normalize( cross( output.worldNormal, output.worldTangent ) * input.tangent.w );
+
                 output.viewDir = normalize(_WorldSpaceCameraPos - mul(ModelMatrix, input.pos).xyz);
 
                 output.lightPos = normalize( _WorldSpaceLightPos0 );
@@ -125,11 +134,27 @@ Shader "Custom/myCelWater" {
     
             fixed4 frag(vertexOutput input) : COLOR 
             {
+                float4 mainTex = tex2D(_MainTex, (input.uv.xy * _MainTex_ST.xy + _MainTex_ST.zw) );
+                float4 bumpMap = tex2D(_BumpMap, input.uv.xy * _BumpMap_ST.xy + _BumpMap_ST.zw);
+
+                //unpackNormal function
+                float3 localCoords = float3( 2.0 * bumpMap.ag - float2( 1.0, 1.0 ), 0.0 );
+                localCoords.z = _BumpMapDepth;
+
+                //normal transpose matrix
+                float3x3 local2WorldTranspose = float3x3(
+                    input.worldTangent,
+                    input.worldBinormal,
+                    input.worldNormal
+                );
+
+                float3 normalDirection = normalize( mul( localCoords, local2WorldTranspose ) );
+
                 float4 passLightColor = _LightColor0;
                 float3 lightDirection = normalize( input.lightPos - input.worldPos.xyz );
  
                 float3 outputColor = _Color;
-                float nDotL = max(0.0, dot(input.worldNormal, lightDirection));
+                float nDotL = max(0.0, dot(normalDirection, lightDirection));
 
                 #ifdef USE_AMBIENT
                 outputColor = (UNITY_LIGHTMODEL_AMBIENT.rgb * outputColor.rgb) * _AmbientAmount;
@@ -215,7 +240,7 @@ Shader "Custom/myCelWater" {
                 }
                 #endif
                 
-                fixed4 combinedOutput = float4( tex2D(_MainTex, (input.uv.xy * _MainTex_ST.xy + _MainTex_ST.zw) ) * outputColor, 0.0 );
+                fixed4 combinedOutput = float4( mainTex * outputColor, 0.0 );
 
                 combinedOutput.a = 1.0;
                 #ifdef USE_TRANSPARENCY
@@ -255,26 +280,29 @@ Shader "Custom/myCelWater" {
             
             uniform float4 _LightColor0;
 
-            sampler2D _MainTex, _NoiseTex, _CameraDepthTexture;
-            float4 _MainTex_ST, _NoiseTex_ST;
+            sampler2D _MainTex, _NoiseTex, _CameraDepthTexture, _BumpMap;
+            float4 _MainTex_ST, _NoiseTex_ST, _BumpMap_ST;
             float4 _Color, _SpecColor, _OutlineColor, _FoamColor;
-            float _Transparency, _AmbientAmount, _DiffuseThreshold, _DiffuseDetail, _DiffuseDifference, _SpecDetail, _Shininess, _OutlineThickness, _Speed, _Amount, _Height, _DistortStrength, _Foam;
+            float _BumpMapDepth, _Transparency, _AmbientAmount, _DiffuseThreshold, _DiffuseDetail, _DiffuseDifference, _SpecDetail, _Shininess, _OutlineThickness, _Speed, _Amount, _Height, _DistortStrength, _Foam;
     
             struct vertexInput {
                 float4 pos : POSITION;
                 float4 texCoords : TEXCOORD0;
                 float4 normal : NORMAL;
+                float4 tangent : TANGENT;
             };
             struct vertexOutput {
                 UNITY_FOG_COORDS(1)
                 float4 pos : SV_POSITION;
                 float4 uv : TEXCOORD0;
                 float3 worldNormal : TEXCOORD1;
-                float4 worldPos : TEXCOORD2;
-                float4 screenPos : TEXCOORD3;
-                float4 lightPos : TEXCOORD4;
-                float3 viewDir : TEXCOORD5;
-                float4 grabPos : TEXCOORD6;
+                float3 worldTangent : TEXCOORD2;
+                float3 worldBinormal : TEXCOORD3;
+                float4 worldPos : TEXCOORD4;
+                float4 screenPos : TEXCOORD5;
+                float4 lightPos : TEXCOORD6;
+                float3 viewDir : TEXCOORD7;
+                float4 grabPos : TEXCOORD8;
             };
     
             vertexOutput vert(vertexInput input)
@@ -286,6 +314,9 @@ Shader "Custom/myCelWater" {
 
                 output.worldPos = normalize( mul( ModelMatrix, input.pos ) );
                 output.worldNormal = normalize( mul( input.normal, ModelMatrixInverse).xyz );
+                output.worldTangent = normalize( mul( unity_ObjectToWorld, input.tangent ).xyz );
+                output.worldBinormal = normalize( cross( output.worldNormal, output.worldTangent ) * input.tangent.w );
+
                 output.viewDir = normalize(_WorldSpaceCameraPos - mul(ModelMatrix, input.pos).xyz);
 
                 output.lightPos = normalize( _WorldSpaceLightPos0 );
@@ -306,11 +337,28 @@ Shader "Custom/myCelWater" {
     
             fixed4 frag(vertexOutput input) : COLOR 
             {
+                float4 mainTex = tex2D(_MainTex, (input.uv.xy * _MainTex_ST.xy + _MainTex_ST.zw) );
+                float4 bumpMap = tex2D(_BumpMap, input.uv.xy * _BumpMap_ST.xy + _BumpMap_ST.zw);
+
+                //unpackNormal function
+                float3 localCoords = float3( 2.0 * bumpMap.ag - float2( 1.0, 1.0 ), 0.0 );
+                localCoords.z = _BumpMapDepth;
+
+                //normal transpose matrix
+                float3x3 local2WorldTranspose = float3x3(
+                    input.worldTangent,
+                    input.worldBinormal,
+                    input.worldNormal
+                );
+
+                // calculate normal direction
+                float3 normalDirection = normalize( mul( localCoords, local2WorldTranspose ) );
+
                 float4 passLightColor = _LightColor0;
                 float3 lightDirection = normalize( input.lightPos - input.worldPos.xyz );
  
                 float3 outputColor = _Color;
-                float nDotL = max(0.0, dot(input.worldNormal, lightDirection));
+                float nDotL = max(0.0, dot(normalDirection, lightDirection));
 
                 #ifdef USE_AMBIENT
                 outputColor = (UNITY_LIGHTMODEL_AMBIENT.rgb * outputColor.rgb) * _AmbientAmount;
@@ -396,7 +444,7 @@ Shader "Custom/myCelWater" {
                 }
                 #endif
 
-                fixed4 combinedOutput = float4( tex2D(_MainTex, (input.uv.xy * _MainTex_ST.xy + _MainTex_ST.zw) ) * outputColor, 0.0 );
+                fixed4 combinedOutput = float4( mainTex * outputColor, 0.0 );
 
                 combinedOutput.a = 1.0;
                 #ifdef USE_TRANSPARENCY
