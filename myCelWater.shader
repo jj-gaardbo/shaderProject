@@ -3,7 +3,7 @@ Shader "Custom/myCelWater" {
     Properties {
         _MainTex ("Main texture", 2D) = "white" {}
         _BumpMap ("Bump Map", 2D) = "bump" {}
-        _BumpMapDepth ("Bump Map Depth", Range(-1.0 ,40.0)) = 1
+        _BumpMapDepth ("Bump Map Depth", Range(-1.0 ,15.0)) = 1
 
         _Color ("Color", Color) = (1.0,1.0,1.0,1.0)
         //Transparency Properties
