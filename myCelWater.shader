@@ -35,20 +35,16 @@ Shader "Custom/myCelWater" {
         _Amount("- Displacement Amount", Range(0,5)) = 0.5
         _Height("- Displacement Height", Range(0,1)) = 0.5
         _DistortStrength("- Distortion Strength", Range(0,5)) = 2
+        _Foam("Foamline Thickness", Range(0,5)) = 0.5
+		_FoamColor("Foamline colour", Color) = (1, 1, 1, .5)
     }
     SubShader {
 
-        GrabPass
-        {
-            "_BackgroundTexture"
-        }
+        GrabPass{"_BackgroundTexture"}
 
         Pass
         {
-            Tags
-            {
-                "Queue" = "Transparent"
-            }
+            Tags{"Queue" = "Transparent" "RenderType"="Transparent"}
             CGPROGRAM 
 
             #include "UnityCG.cginc"
@@ -69,7 +65,7 @@ Shader "Custom/myCelWater" {
             sampler2D _MainTex, _NoiseTex, _CameraDepthTexture, _BackgroundTexture;
             float4 _MainTex_ST, _NoiseTex_ST;
             float4 _Color, _SpecColor, _OutlineColor, _FoamColor;
-            float _Transparency, _AmbientAmount, _DiffuseThreshold, _DiffuseDetail, _DiffuseDifference, _SpecDetail, _Shininess, _OutlineThickness, _Speed, _Amount, _Height, _DistortStrength;
+            float _Transparency, _AmbientAmount, _DiffuseThreshold, _DiffuseDetail, _DiffuseDifference, _SpecDetail, _Shininess, _OutlineThickness, _Speed, _Amount, _Height, _DistortStrength, _Foam;
 
             struct vertexInput {
                 float4 pos : POSITION;
@@ -77,6 +73,7 @@ Shader "Custom/myCelWater" {
                 float4 normal : NORMAL;
             };
             struct vertexOutput {
+                UNITY_FOG_COORDS(1)
                 float4 pos : SV_POSITION;
                 float4 uv : TEXCOORD0;
                 float3 worldNormal : TEXCOORD1;
@@ -109,7 +106,6 @@ Shader "Custom/myCelWater" {
 
                 // Translates all the vertecies onto camera space so we can see them from our cameras point of view (Camera coordinates)
                 output.pos =  UnityObjectToClipPos(input.pos);
-                output.screenPos = ComputeScreenPos(output.pos);
 
                 // use ComputeGrabScreenPos function from UnityCG.cginc
                 // to get the correct texture coordinate
@@ -117,8 +113,10 @@ Shader "Custom/myCelWater" {
 
                 // distort based on bump map
                 float3 underwaterNoise = tex2Dlod(_NoiseTex, float4(input.texCoords.xy * _NoiseTex_ST.xy + _NoiseTex_ST.zw,0,0));
+                output.grabPos.x -= _DistortStrength/3;
                 output.grabPos.xyz += underwaterNoise.xyz * _DistortStrength;
-                
+                UNITY_TRANSFER_FOG(output,output.pos);
+                output.screenPos = ComputeScreenPos(output.pos);
                 return output;
             }
     
@@ -204,6 +202,12 @@ Shader "Custom/myCelWater" {
                     outputColor *= outlineStrength;
                 }
                 #endif
+
+                float4 depthSample = SAMPLE_DEPTH_TEXTURE_PROJ(_CameraDepthTexture, input.screenPos);
+				float depth = LinearEyeDepth(depthSample).r;
+                half4 foamLine = 1 - saturate(_Foam * (depth - input.screenPos.w)); // foam line by comparing depth and screenposition
+                outputColor += foamLine; // add the foam line and tint to the texture	
+                outputColor *= _FoamColor;
                 
                 fixed4 combinedOutput = float4( tex2D(_MainTex, (input.uv.xy * _MainTex_ST.xy + _MainTex_ST.zw) ) * outputColor, 0.0 );
 
@@ -219,10 +223,9 @@ Shader "Custom/myCelWater" {
             
         }
 
-        Tags {"Queue"="Transparent" "RenderType"="Transparent"}
+        Tags {"Queue"="Transparent" "RenderType"="Transparent" }
         LOD 200
 
-        Cull Off
         ZWrite Off
         Blend SrcAlpha OneMinusSrcAlpha
 
@@ -245,10 +248,10 @@ Shader "Custom/myCelWater" {
             
             uniform float4 _LightColor0;
 
-            sampler2D _MainTex, _NoiseTex, _CameraDepthTexture, _BackgroundTexture;
+            sampler2D _MainTex, _NoiseTex, _CameraDepthTexture;
             float4 _MainTex_ST, _NoiseTex_ST;
             float4 _Color, _SpecColor, _OutlineColor, _FoamColor;
-            float _Transparency, _AmbientAmount, _DiffuseThreshold, _DiffuseDetail, _DiffuseDifference, _SpecDetail, _Shininess, _OutlineThickness, _Speed, _Amount, _Height, _Foam, _DistortStrength;
+            float _Transparency, _AmbientAmount, _DiffuseThreshold, _DiffuseDetail, _DiffuseDifference, _SpecDetail, _Shininess, _OutlineThickness, _Speed, _Amount, _Height, _DistortStrength, _Foam;
     
             struct vertexInput {
                 float4 pos : POSITION;
@@ -256,6 +259,7 @@ Shader "Custom/myCelWater" {
                 float4 normal : NORMAL;
             };
             struct vertexOutput {
+                UNITY_FOG_COORDS(1)
                 float4 pos : SV_POSITION;
                 float4 uv : TEXCOORD0;
                 float3 worldNormal : TEXCOORD1;
@@ -288,6 +292,7 @@ Shader "Custom/myCelWater" {
 
                 // Translates all the vertecies onto camera space so we can see them from our cameras point of view (Camera coordinates)
                 output.pos =  UnityObjectToClipPos(input.pos);
+                UNITY_TRANSFER_FOG(output,output.pos);
                 output.screenPos = ComputeScreenPos(output.pos);
                 return output;
             }
@@ -375,6 +380,13 @@ Shader "Custom/myCelWater" {
                 }
                 #endif
                 
+
+                float4 depthSample = SAMPLE_DEPTH_TEXTURE_PROJ(_CameraDepthTexture, input.screenPos);
+				float depth = LinearEyeDepth(depthSample).r;
+                half4 foamLine = 1 - saturate(_Foam * (depth - input.screenPos.w)); // foam line by comparing depth and screenposition
+                outputColor += foamLine; // add the foam line and tint to the texture	
+                outputColor *= _FoamColor;
+
                 fixed4 combinedOutput = float4( tex2D(_MainTex, (input.uv.xy * _MainTex_ST.xy + _MainTex_ST.zw) ) * outputColor, 0.0 );
 
                 combinedOutput.a = 1.0;
