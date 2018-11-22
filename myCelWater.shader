@@ -35,8 +35,10 @@ Shader "Custom/myCelWater" {
         _Amount("- Displacement Amount", Range(0,5)) = 0.5
         _Height("- Displacement Height", Range(0,1)) = 0.5
         _DistortStrength("- Distortion Strength", Range(0,5)) = 2
-        _Foam("Foamline Thickness", Range(0,5)) = 0.5
-		_FoamColor("Foamline colour", Color) = (1, 1, 1, .5)
+
+        [Toggle(USE_FOAM)] _UseFoam("Foam ON/OFF", Float) = 0
+        _Foam("- Foamline Thickness", Range(0,5)) = 0.5
+		_FoamColor("- Foamline colour", Color) = (1, 1, 1, .5)
     }
     SubShader {
 
@@ -59,6 +61,7 @@ Shader "Custom/myCelWater" {
             #pragma shader_feature USE_OUTLINE
             #pragma shader_feature USE_TRANSPARENCY
             #pragma shader_feature USE_DISPLACEMENT
+            #pragma shader_feature USE_FOAM
             
             uniform float4 _LightColor0;
 
@@ -203,11 +206,14 @@ Shader "Custom/myCelWater" {
                 }
                 #endif
 
-                float4 depthSample = SAMPLE_DEPTH_TEXTURE_PROJ(_CameraDepthTexture, input.screenPos);
-				float depth = LinearEyeDepth(depthSample).r;
+                #ifdef USE_FOAM
+				float depth = LinearEyeDepth(SAMPLE_DEPTH_TEXTURE_PROJ(_CameraDepthTexture, input.screenPos));
                 half4 foamLine = 1 - saturate(_Foam * (depth - input.screenPos.w)); // foam line by comparing depth and screenposition
-                outputColor += foamLine; // add the foam line and tint to the texture	
-                outputColor *= _FoamColor;
+                if(foamLine.x >= 0.9){
+                    outputColor += foamLine; // add the foam line and tint to the texture	
+                    outputColor *= _FoamColor;
+                }
+                #endif
                 
                 fixed4 combinedOutput = float4( tex2D(_MainTex, (input.uv.xy * _MainTex_ST.xy + _MainTex_ST.zw) ) * outputColor, 0.0 );
 
@@ -245,6 +251,7 @@ Shader "Custom/myCelWater" {
             #pragma shader_feature USE_OUTLINE
             #pragma shader_feature USE_TRANSPARENCY
             #pragma shader_feature USE_DISPLACEMENT
+            #pragma shader_feature USE_FOAM
             
             uniform float4 _LightColor0;
 
@@ -379,13 +386,15 @@ Shader "Custom/myCelWater" {
                     outputColor *= outlineStrength;
                 }
                 #endif
-                
 
-                float4 depthSample = SAMPLE_DEPTH_TEXTURE_PROJ(_CameraDepthTexture, input.screenPos);
-				float depth = LinearEyeDepth(depthSample).r;
+                #ifdef USE_FOAM
+				float depth = LinearEyeDepth(SAMPLE_DEPTH_TEXTURE_PROJ(_CameraDepthTexture, input.screenPos));
                 half4 foamLine = 1 - saturate(_Foam * (depth - input.screenPos.w)); // foam line by comparing depth and screenposition
-                outputColor += foamLine; // add the foam line and tint to the texture	
-                outputColor *= _FoamColor;
+                if(foamLine.x >= 0.9){
+                    outputColor += foamLine; // add the foam line and tint to the texture	
+                    outputColor *= _FoamColor;
+                }
+                #endif
 
                 fixed4 combinedOutput = float4( tex2D(_MainTex, (input.uv.xy * _MainTex_ST.xy + _MainTex_ST.zw) ) * outputColor, 0.0 );
 
