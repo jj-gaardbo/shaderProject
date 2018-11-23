@@ -57,7 +57,7 @@ Material:
     m_Floats:
     - _AmbientAmount: 4.59
     - _Amount: 0.5
-    - _BumpMapDepth: -0.58
+    - _BumpMapDepth: 0.2
     - _BumpScale: 1
     - _Cutoff: 0.5
     - _DetailNormalMapScale: 1

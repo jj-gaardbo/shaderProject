@@ -55,7 +55,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     m_Floats:
-    - _AmbientAmount: 3.7
+    - _AmbientAmount: 3.99
     - _Amount: 0.5
     - _BumpMapDepth: -1
     - _BumpScale: 1
@@ -73,11 +73,11 @@ Material:
     - _Metallic: 0
     - _Mode: 0
     - _OcclusionStrength: 1
-    - _OutlineThickness: 0.324
+    - _OutlineThickness: 0.451
     - _Parallax: 0.02
-    - _Shininess: 9
+    - _Shininess: 3.8
     - _SmoothnessTextureChannel: 0
-    - _SpecDetail: 0
+    - _SpecDetail: 0.73
     - _SpecularHighlights: 1
     - _Speed: 0.5
     - _SrcBlend: 1
