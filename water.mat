@@ -78,10 +78,10 @@ Material:
     - _DiffuseDetail: 0
     - _DiffuseDifference: 0.181
     - _DiffuseThreshold: 0.234
-    - _DistortStrength: 0.54
+    - _DistortStrength: 0.34
     - _DstBlend: 0
     - _ExtraHeight: 0
-    - _Foam: 0.11
+    - _Foam: 0.1
     - _GlossMapScale: 1
     - _Glossiness: 0.5
     - _GlossyReflections: 1
