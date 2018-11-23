@@ -187,6 +187,7 @@ Shader "Custom/myCel" {
                 float outlineStrength = saturate( (dot(input.worldNormal, input.viewDir ) - _OutlineThickness));
                 if(outlineStrength < 0.01){
                     outputColor *= outlineStrength;
+                    outputColor += _OutlineColor;
                 }
                 #endif
                 
@@ -356,6 +357,7 @@ Shader "Custom/myCel" {
                 float outlineStrength = saturate( (dot(input.worldNormal, input.viewDir ) - _OutlineThickness));
                 if(outlineStrength < 0.01){
                     outputColor *= outlineStrength;
+                    outputColor += _OutlineColor;
                 }
                 #endif
                 
