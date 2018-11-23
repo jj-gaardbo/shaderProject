@@ -4,6 +4,7 @@ Shader "Custom/myCelWater" {
         _MainTex ("Main texture", 2D) = "white" {}
         _BumpMap ("Bump Map", 2D) = "bump" {}
         _BumpMapDepth ("Bump Map Depth", Range(-1.0 ,15.0)) = 1
+        _Cube("Cube Map", Cube) = "" {}
 
         _Color ("Color", Color) = (1.0,1.0,1.0,1.0)
         //Transparency Properties
@@ -42,6 +43,14 @@ Shader "Custom/myCelWater" {
         [Toggle(USE_FOAM)] _UseFoam("Foam ON/OFF", Float) = 0
         _Foam("- Foamline Thickness", Range(0,5)) = 0.5
 		_FoamColor("- Foamline colour", Color) = (1, 1, 1, .5)
+
+                //Reflection
+        [Toggle(USE_REFLECTION)] _UseReflection("Reflection ON/OFF", Float) = 0
+        _ReflectionAmount ("- Reflection Amount", Range(0,10)) = 1
+
+        //Refraction
+        [Toggle(USE_REFRACTION)] _UseRefraction("Refraction ON/OFF", Float) = 0
+        _RefractiveIndex("- Refractive Index", Range(-10,10)) = 1.5
     }
     SubShader {
 
@@ -65,13 +74,16 @@ Shader "Custom/myCelWater" {
             #pragma shader_feature USE_TRANSPARENCY
             #pragma shader_feature USE_DISPLACEMENT
             #pragma shader_feature USE_FOAM
+            #pragma shader_feature USE_REFRACTION
+            #pragma shader_feature USE_REFLECTION
             
             uniform float4 _LightColor0;
 
             sampler2D _MainTex, _NoiseTex, _CameraDepthTexture, _BackgroundTexture, _BumpMap;
+            uniform samplerCUBE _Cube;
             float4 _MainTex_ST, _NoiseTex_ST, _BumpMap_ST;
             float4 _Color, _SpecColor, _OutlineColor, _FoamColor;
-            float _BumpMapDepth, _Transparency, _AmbientAmount, _DiffuseThreshold, _DiffuseDetail, _DiffuseDifference, _SpecDetail, _Shininess, _OutlineThickness, _Speed, _Amount, _Height, _DistortStrength, _Foam;
+            float _BumpMapDepth, _Transparency, _AmbientAmount, _DiffuseThreshold, _DiffuseDetail, _DiffuseDifference, _SpecDetail, _Shininess, _OutlineThickness, _Speed, _Amount, _Height, _DistortStrength, _Foam, _ReflectionAmount, _RefractiveIndex;
 
             struct vertexInput {
                 float4 pos : POSITION;
@@ -83,14 +95,14 @@ Shader "Custom/myCelWater" {
                 UNITY_FOG_COORDS(1)
                 float4 pos : SV_POSITION;
                 float4 uv : TEXCOORD0;
-                float3 worldNormal : TEXCOORD1;
-                float3 worldTangent : TEXCOORD2;
-                float3 worldBinormal : TEXCOORD3;
-                float4 worldPos : TEXCOORD4;
-                float4 screenPos : TEXCOORD5;
-                float4 lightPos : TEXCOORD6;
-                float3 viewDir : TEXCOORD7;
-                float4 grabPos : TEXCOORD8;
+                float3 worldNormal : NORMAL;
+                float3 worldTangent : TEXCOORD1;
+                float3 worldBinormal : TEXCOORD2;
+                float4 worldPos : TEXCOORD3;
+                float4 screenPos : TEXCOORD4;
+                float4 lightPos : TEXCOORD5;
+                float3 viewDir : TEXCOORD6;
+                float4 grabPos : TEXCOORD7;
             };
     
             vertexOutput vert(vertexInput input)
@@ -240,7 +252,15 @@ Shader "Custom/myCelWater" {
                     outputColor *= _FoamColor;
                 }
                 #endif
-                
+
+                #ifdef USE_REFLECTION
+                    outputColor += texCUBE(_Cube, reflect( normalize(input.viewDir), input.worldNormal))  * _ReflectionAmount;
+                #endif
+
+                #ifdef USE_REFRACTION
+                    outputColor *= texCUBE(_Cube, refract(normalize(input.viewDir), input.worldNormal, 1.0 / _RefractiveIndex));
+                #endif
+
                 fixed4 combinedOutput = float4( mainTex * outputColor, 0.0 );
 
                 combinedOutput.a = 1.0;
@@ -278,13 +298,16 @@ Shader "Custom/myCelWater" {
             #pragma shader_feature USE_TRANSPARENCY
             #pragma shader_feature USE_DISPLACEMENT
             #pragma shader_feature USE_FOAM
+            #pragma shader_feature USE_REFRACTION
+            #pragma shader_feature USE_REFLECTION
             
             uniform float4 _LightColor0;
 
             sampler2D _MainTex, _NoiseTex, _CameraDepthTexture, _BumpMap;
+            uniform samplerCUBE _Cube;
             float4 _MainTex_ST, _NoiseTex_ST, _BumpMap_ST;
             float4 _Color, _SpecColor, _OutlineColor, _FoamColor;
-            float _BumpMapDepth, _Transparency, _AmbientAmount, _DiffuseThreshold, _DiffuseDetail, _DiffuseDifference, _SpecDetail, _Shininess, _OutlineThickness, _Speed, _Amount, _Height, _DistortStrength, _Foam;
+            float _BumpMapDepth, _Transparency, _AmbientAmount, _DiffuseThreshold, _DiffuseDetail, _DiffuseDifference, _SpecDetail, _Shininess, _OutlineThickness, _Speed, _Amount, _Height, _DistortStrength, _Foam, _ReflectionAmount, _RefractiveIndex;
     
             struct vertexInput {
                 float4 pos : POSITION;
@@ -296,14 +319,14 @@ Shader "Custom/myCelWater" {
                 UNITY_FOG_COORDS(1)
                 float4 pos : SV_POSITION;
                 float4 uv : TEXCOORD0;
-                float3 worldNormal : TEXCOORD1;
-                float3 worldTangent : TEXCOORD2;
-                float3 worldBinormal : TEXCOORD3;
-                float4 worldPos : TEXCOORD4;
-                float4 screenPos : TEXCOORD5;
-                float4 lightPos : TEXCOORD6;
-                float3 viewDir : TEXCOORD7;
-                float4 grabPos : TEXCOORD8;
+                float3 worldNormal : NORMAL;
+                float3 worldTangent : TEXCOORD1;
+                float3 worldBinormal : TEXCOORD2;
+                float4 worldPos : TEXCOORD3;
+                float4 screenPos : TEXCOORD4;
+                float4 lightPos : TEXCOORD5;
+                float3 viewDir : TEXCOORD6;
+                float4 grabPos : TEXCOORD7;
             };
     
             vertexOutput vert(vertexInput input)
@@ -315,6 +338,7 @@ Shader "Custom/myCelWater" {
 
                 output.worldPos = normalize( mul( ModelMatrix, input.pos ) );
                 output.worldNormal = normalize( mul( input.normal, ModelMatrixInverse).xyz );
+
                 output.worldTangent = normalize( mul( unity_ObjectToWorld, input.tangent ).xyz );
                 output.worldBinormal = normalize( cross( output.worldNormal, output.worldTangent ) * input.tangent.w );
 
@@ -444,6 +468,14 @@ Shader "Custom/myCelWater" {
                     outputColor += foamLine; // add the foam line and tint to the texture	
                     outputColor *= _FoamColor;
                 }
+                #endif
+
+                #ifdef USE_REFLECTION
+                    outputColor += texCUBE(_Cube, reflect( normalize(input.viewDir), input.worldNormal))  * _ReflectionAmount;
+                #endif
+
+                #ifdef USE_REFRACTION
+                    outputColor *= texCUBE(_Cube, refract(normalize(input.viewDir), input.worldNormal, 1.0 / _RefractiveIndex));
                 #endif
 
                 fixed4 combinedOutput = float4( mainTex * outputColor, 0.0 );
