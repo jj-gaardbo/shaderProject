@@ -81,7 +81,7 @@ Shader "Custom/myCelWater" {
 
             sampler2D _MainTex, _NoiseTex, _CameraDepthTexture, _BackgroundTexture, _BumpMap;
             uniform samplerCUBE _Cube;
-            float4 _MainTex_ST, _NoiseTex_ST, _BumpMap_ST;
+            float4 _MainTex_ST, _NoiseTex_ST, _BumpMap_ST, _Cube_ST;
             float4 _Color, _SpecColor, _OutlineColor, _FoamColor;
             float _BumpMapDepth, _Transparency, _AmbientAmount, _DiffuseThreshold, _DiffuseDetail, _DiffuseDifference, _SpecDetail, _Shininess, _OutlineThickness, _Speed, _Amount, _Height, _DistortStrength, _Foam, _ReflectionAmount, _RefractiveIndex;
 
@@ -305,7 +305,7 @@ Shader "Custom/myCelWater" {
 
             sampler2D _MainTex, _NoiseTex, _CameraDepthTexture, _BumpMap;
             uniform samplerCUBE _Cube;
-            float4 _MainTex_ST, _NoiseTex_ST, _BumpMap_ST;
+            float4 _MainTex_ST, _NoiseTex_ST, _BumpMap_ST, _Cube_ST;
             float4 _Color, _SpecColor, _OutlineColor, _FoamColor;
             float _BumpMapDepth, _Transparency, _AmbientAmount, _DiffuseThreshold, _DiffuseDetail, _DiffuseDifference, _SpecDetail, _Shininess, _OutlineThickness, _Speed, _Amount, _Height, _DistortStrength, _Foam, _ReflectionAmount, _RefractiveIndex;
     
